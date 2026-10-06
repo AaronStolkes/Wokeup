@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Logon</title>
+<style>
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: #C5D8A4; /* matcha green */
+    font-family: "MS Sans Serif", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 13px;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px 12px;
+    /* faint classic desktop texture, no images used */
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(255,255,255,0.28) 0, rgba(255,255,255,0) 42%),
+      radial-gradient(circle at 82% 78%, rgba(0,0,0,0.06) 0, rgba(0,0,0,0) 45%);
+  }
+
+  /* ---------- Classic Windows bevels ---------- */
+  .raised {
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    box-shadow: inset -1px -1px 0 #000000, inset 1px 1px 0 #DFDFDF;
+    background: #C0C0C0;
+  }
+
+  .sunken {
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #DFDFDF;
+    background: #FFFFFF;
+  }
+
+  /* ---------- Logon panel ---------- */
+  .panel {
+    width: 340px;
+    padding: 3px;
+    user-select: none;
+  }
+
+  .title-bar {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px 0 4px;
+    background: linear-gradient(90deg, #000080 0%, #0A0A8F 12%, #1084D0 88%, #35A8EA 100%);
+    color: #FFFFFF;
+  }
+
+  .title-text {
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .title-boxes { display: flex; gap: 2px; padding-right: 1px; }
+
+  .title-box {
+    width: 16px;
+    height: 14px;
+    background: #C0C0C0;
+    border: 1px solid;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #DFDFDF;
+    color: #000;
+    font-size: 9px;
+    line-height: 12px;
+    text-align: center;
+    font-family: "Marlett", "MS Sans Serif", Tahoma, sans-serif;
+    overflow: hidden;
+  }
+
+  .panel-body { padding: 14px 14px 12px; }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #808080;
+    box-shadow: 0 1px 0 #FFFFFF;
+  }
+
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: bold;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #FF3B30 0%, #34C759 33%, #007AFF 66%, #FFCC00 100%);
+    border: 1px solid;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.2px;
+  }
+
+  .brand p {
+    margin: 3px 0 0;
+    font-size: 11px;
+    color: #404040;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .field label {
+    flex: 0 0 88px;
+    text-align: right;
+    font-size: 12px;
+  }
+
+  .field input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 22px;
+    padding: 2px 4px;
+    font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+    font-size: 12px;
+    color: #000;
+    background: #FFFFFF;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    box-shadow: inset 1px 1px 0 #000000;
+    outline: none;
+  }
+
+  .field input:focus { background: #FFFFE1; }
+
+  .link-row { text-align: right; margin: 2px 0 12px; }
+
+  .link {
+    font-size: 12px;
+    color: #0000A0;
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: inherit;
+  }
+
+  .link:hover { color: #FF0000; }
+  .link:focus-visible { outline: 1px dotted #000; outline-offset: 2px; }
+
+  .button-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #808080;
+    box-shadow: inset 0 1px 0 #FFFFFF;
+  }
+
+  .btn {
+    min-width: 78px;
+    height: 24px;
+    padding: 0 12px;
+    font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+    font-size: 12px;
+    color: #000;
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #000000 #000000 #FFFFFF;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #DFDFDF;
+    cursor: pointer;
+  }
+
+  .btn:active {
+    border-color: #000000 #FFFFFF #FFFFFF #000000;
+    box-shadow: inset 1px 1px 0 #808080;
+    padding: 1px 11px 0 13px;
+  }
+
+  .btn:focus-visible { outline: 1px dotted #000; outline-offset: -5px; }
+
+  .status {
+    min-height: 30px;
+    margin-top: 12px;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #000080;
+    visibility: hidden;
+  }
+
+  .status.show { visibility: visible; }
+
+  /* ---------- Modal dialog ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.30);
+    z-index: 50;
+  }
+
+  .overlay.open { display: flex; }
+
+  .dialog {
+    width: 300px;
+    padding: 3px;
+    animation: pop 120ms ease-out;
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.94); opacity: 0.65; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .dialog-body {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 14px 10px;
+  }
+
+  .dialog-icon {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6FA8FF, #000080 72%);
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 32px;
+    text-align: center;
+    border: 1px solid #000040;
+  }
+
+  .dialog-message {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .dialog .button-row {
+    padding: 10px 12px 12px;
+    border-top: 1px solid #808080;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= Logon panel ================= -->
+  <div class="panel raised" role="dialog" aria-labelledby="panel-title">
+    <div class="title-bar">
+      <span class="title-text" id="panel-title">System Logon</span>
+      <span class="title-boxes" aria-hidden="true">
+        <span class="title-box">_</span>
+        <span class="title-box">&#9633;</span>
+        <span class="title-box">&#10005;</span>
+      </span>
+    </div>
+
+    <div class="panel-body">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">W</div>
+        <div>
+          <h1>Welcome</h1>
+          <p>Enter your credentials to sign in.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="accountId">Account ID:</label>
+        <input type="text" id="accountId" name="accountId" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" autocomplete="off">
+      </div>
+
+      <div class="link-row">
+        <button type="button" class="link" id="forgotLink">Forgot your password?</button>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="btn" id="okButton">OK</button>
+        <button type="button" class="btn" id="cancelButton">Cancel</button>
+      </div>
+
+      <div class="status sunken" id="status" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- ================= Modal dialog ================= -->
+  <div class="overlay" id="overlay">
+    <div class="dialog raised" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-message">
+      <div class="title-bar">
+        <span class="title-text" id="dlg-title">System Logon</span>
+        <span class="title-boxes" aria-hidden="true">
+          <span class="title-box">&#10005;</span>
+        </span>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-icon" aria-hidden="true">i</div>
+        <p class="dialog-message" id="dlg-message">Please contact your system administrator.</p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="btn" id="dialogOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var accountInput = document.getElementById('accountId');
+  var passwordInput = document.getElementById('password');
+  var okButton = document.getElementById('okButton');
+  var cancelButton = document.getElementById('cancelButton');
+  var forgotLink = document.getElementById('forgotLink');
+  var statusBox = document.getElementById('status');
+  var overlay = document.getElementById('overlay');
+  var dialogOk = document.getElementById('dialogOk');
+  var lastFocused = null;
+
+  function showStatus(message) {
+    statusBox.textContent = message;
+    statusBox.classList.add('show');
+  }
+
+  function clearStatus() {
+    statusBox.textContent = '';
+    statusBox.classList.remove('show');
+  }
+
+  function openDialog() {
+    lastFocused = document.activeElement;
+    overlay.classList.add('open');
+    dialogOk.focus();
+  }
+
+  function closeDialog() {
+    overlay.classList.remove('open');
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      lastFocused.focus();
+    } else {
+      forgotLink.focus();
+    }
+  }
+
+  // OK: validate the two fields.
+  okButton.addEventListener('click', function () {
+    var account = accountInput.value.trim();
+    var password = passwordInput.value;
+
+    if (account === '' || password === '') {
+      showStatus('Please enter your account ID and password.');
+      (account === '' ? accountInput : passwordInput).focus();
+      return;
+    }
+    showStatus('Logging in...');
+  });
+
+  // Cancel: clear both fields.
+  cancelButton.addEventListener('click', function () {
+    accountInput.value = '';
+    passwordInput.value = '';
+    clearStatus();
+    accountInput.focus();
+  });
+
+  // Forgot your password? -> retro dialog.
+  forgotLink.addEventListener('click', openDialog);
+  dialogOk.addEventListener('click', closeDialog);
+
+  overlay.addEventListener('click', function (event) {
+    if (event.target === overlay) { closeDialog(); }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && overlay.classList.contains('open')) {
+      closeDialog();
+      return;
+    }
+    if (event.key === 'Enter' && !overlay.classList.contains('open')) {
+      var target = event.target;
+      if (target === accountInput || target === passwordInput) {
+        event.preventDefault();
+        okButton.click();
+      }
+    }
+  });
+
+  accountInput.focus();
+})();
+</script>
+</body>
+</html>
